@@ -2,15 +2,18 @@
 
 #include <limits>
 
-// std::isnan isn't constexpr according to cppreference
-template <typename T> constexpr bool _isnan(T t) noexcept {
+namespace details {
+
+// std::isnan isn't constexpr according to cppreference so we implement our own.
+template <typename T> constexpr bool isnan(T t) noexcept {
   static_assert(std::numeric_limits<T>::is_iec559);
   // https://en.cppreference.com/w/cpp/numeric/math/isnan
   return t != t;
 }
 
-// std::exp2 and std::pow aren't constexpr.according to cppreference
-template <typename T> constexpr T _exp2(unsigned int exp) noexcept {
+// std::exp2 and std::pow aren't constexpr.according to cppreference so we
+// implement our own.
+template <typename T> constexpr T exp2(unsigned int exp) noexcept {
   static_assert(std::numeric_limits<T>::is_iec559);
   T result = 1.0;
   for (unsigned int i = 0; i < exp; ++i) {
@@ -18,6 +21,8 @@ template <typename T> constexpr T _exp2(unsigned int exp) noexcept {
   }
   return result;
 }
+
+} // namespace details
 
 // Safe cast from a floating point type to an integer type by clamping if the
 // value would be out of bounds.
@@ -48,12 +53,12 @@ constexpr To clamp_cast(const From from) noexcept {
   // the minimum is a power of 2 while the maximum is a power of 2 minus 1.
   // In the uncommon case that a bound is larger than what From can exactly
   // represent we know that To can store all finite values of From because it
-  // is at least one more power of two larger.
+  // is at least one power of two larger.
 
   constexpr From lower_bound_inclusive = [&]() constexpr {
     if constexpr (to_limits::is_signed) {
       if constexpr (from_negative_exponent_bits <= -to_bits) {
-        return -_exp2<From>(to_bits);
+        return -details::exp2<From>(to_bits);
       } else {
         return from_limits::lowest;
       }
@@ -65,14 +70,27 @@ constexpr To clamp_cast(const From from) noexcept {
 
   constexpr From upper_bound_exclusive = [&]() constexpr {
     if constexpr (from_positive_exponent_bits >= to_bits) {
-      return _exp2<From>(to_bits);
+      return details::exp2<From>(to_bits);
     } else {
       return from_limits::infinity;
     }
   }
   ();
 
-  if (_isnan(from)) {
+  // The version below is the most human readable. However, checking with the
+  // godbolt compiler explorer and clang 10 we see that this compiles to
+  // multiple jump instructions. It could be faster to use branchless
+  // operations like
+  // from = std::max(from, lower_bound_inclusive);
+  // from = std::min(from, upper_bound_inclusive);
+  // For this to work we need access to upper_bound_inclusive which I did not
+  // find a nice way to create as a constexpr. The most readable way would be to
+  // use std::nextafter or std::nexttoward on upper_bound_exclusive but they are
+  // not constexpr.
+  // Another interesting assembly comparison is to the equivalent cast in Rust.
+  // For example: pub fn f(f: f32) -> i32 { f as i32 }
+
+  if (details::isnan(from)) {
     return 0;
   } else if (from < lower_bound_inclusive) {
     return to_limits::min();

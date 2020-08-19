@@ -4,7 +4,7 @@ In c/c++ it is easy to accidentally invoke undefined behavior when converting a 
 
 Source: https://en.cppreference.com/w/cpp/language/implicit_conversion section "Floating–integral conversions"
 
-This applies to something as innocous as
+This applies to innocuous looking code like
 
 ```c++
 void foo(float f) {
@@ -19,8 +19,8 @@ which does not even generate a warning.
 `clamp-cast.hpp` is a c++17 header that makes it easy to safely perform such a conversion by clamping the value into the bounds of the target integer type.
 
 ```c++
-void foo(float f) {
-    int i = clamp_cast<int>(f);
+int foo(float f) {
+    return clamp_cast<int>(f);
 }
 ```
 
