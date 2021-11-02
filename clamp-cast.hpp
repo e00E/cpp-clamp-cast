@@ -77,18 +77,14 @@ constexpr To clamp_cast(const From from) noexcept {
   }
   ();
 
-  // The version below is the most human readable. However, checking with the
-  // godbolt compiler explorer and clang 10 we see that this compiles to
-  // multiple jump instructions. It could be faster to use branchless
-  // operations like
-  // from = std::max(from, lower_bound_inclusive);
-  // from = std::min(from, upper_bound_inclusive);
-  // For this to work we need access to upper_bound_inclusive which I did not
-  // find a nice way to create as a constexpr. The most readable way would be to
-  // use std::nextafter or std::nexttoward on upper_bound_exclusive but they are
-  // not constexpr.
-  // Another interesting assembly comparison is to the equivalent cast in Rust.
-  // For example: pub fn f(f: f32) -> i32 { f as i32 }
+  // Checking with the Godbolt compiler explorer and clang 10 we see that this
+  // compiles to multiple jump instructions. It could be better to use
+  // conditional moves but I was not able to get the compiler to emit them. For
+  // an example how the assembly code would like compare it the equivalent cast
+  // in Rust `pub fn f(f: f32) -> i32 { f as i32 }`. One problem in making this
+  // happen that unlike the Rust assembly we cannot unconditionally start with
+  // `To to = static_cast<To>(from)` and the conditionally overwrite if the
+  // limits are violated because the first statement is already UB in C++.
 
   if (details::isnan(from)) {
     return 0;
