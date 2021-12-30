@@ -52,7 +52,7 @@ constexpr To clamp_cast(const From from) noexcept {
   // the minimum is a power of 2 while the maximum is a power of 2 minus 1.
   // In the uncommon case that a bound is larger than what From can exactly
   // represent we know that To can store all finite values of From because it
-  // is at least one power of two larger.
+  // is at least one power of 2 larger.
 
   constexpr From lower_bound_inclusive = [&]() constexpr {
     if constexpr (to_limits::is_signed) {
@@ -85,7 +85,7 @@ constexpr To clamp_cast(const From from) noexcept {
   // unconditionally start with `To to = static_cast<To>(from)` and then
   // conditionally overwrite if the limits are violated because the first
   // statement is already UB in C++.
-  // For bounds that are powers of two we could use std::min, std::max to remove
+  // For bounds that are powers of 2 we could use std::min, std::max to remove
   // the branching but this doesn't work for upper bounds as they are a power of
   // 2 minus 1 which is likely not exactly representable in From.
 
