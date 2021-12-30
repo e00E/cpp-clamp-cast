@@ -6,7 +6,6 @@ namespace details {
 
 // std::isnan isn't constexpr according to cppreference so we implement our own.
 template <typename T> constexpr bool isnan(T t) noexcept {
-  static_assert(std::numeric_limits<T>::is_iec559);
   // https://en.cppreference.com/w/cpp/numeric/math/isnan
   return t != t;
 }
@@ -16,7 +15,6 @@ template <typename T> constexpr bool isnan(T t) noexcept {
 template <typename T> constexpr T exp2(int exp) noexcept {
   // Alternatively we could use std::bit_cast but explicit exponentation is
   // clearer.
-  static_assert(std::numeric_limits<T>::is_iec559);
   T result = 1.0;
   for (int i{0}; i < exp; ++i) {
     result *= 2.0;
