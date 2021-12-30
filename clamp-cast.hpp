@@ -43,8 +43,7 @@ constexpr To clamp_cast(const From from) noexcept {
   static_assert(to_limits::radix == 2);
 
   constexpr auto to_bits = to_limits::digits;
-  constexpr auto from_negative_exponent_bits = from_limits::min_exponent - 1;
-  constexpr auto from_positive_exponent_bits = from_limits::max_exponent - 1;
+  constexpr auto exponent_bits = from_limits::max_exponent - 1;
 
   // Floating point numbers can represent a large range of powers of 2 exactly.
   // For example, even a 32 bit float can represent 2**64. In this common case
@@ -57,7 +56,7 @@ constexpr To clamp_cast(const From from) noexcept {
 
   constexpr From lower_bound_inclusive = [&]() constexpr {
     if constexpr (to_limits::is_signed) {
-      if constexpr (from_negative_exponent_bits <= -to_bits) {
+      if constexpr (exponent_bits >= to_bits) {
         return -details::exp2<From>(to_bits);
       } else {
         return from_limits::lowest;
@@ -69,7 +68,7 @@ constexpr To clamp_cast(const From from) noexcept {
   ();
 
   constexpr From upper_bound_exclusive = [&]() constexpr {
-    if constexpr (from_positive_exponent_bits >= to_bits) {
+    if constexpr (exponent_bits >= to_bits) {
       return details::exp2<From>(to_bits);
     } else {
       return from_limits::infinity;
