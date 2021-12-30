@@ -24,9 +24,9 @@ template <typename T> constexpr T exp2(int exp) noexcept {
 
 } // namespace details
 
-// Safe cast from a floating point type to an integer type by clamping if the
-// value would be out of bounds.
-// Nan is converted to 0.
+// Safe cast from a floating point type to an integer type by clamping to its
+// bounds if the value would be outside.
+// NaN is converted to 0.
 //
 // Without clamping this would be undefined behavior if the value cannot fit
 // into the destination type:
