@@ -79,8 +79,8 @@ constexpr To clamp_cast(const From from) noexcept {
 
   // Checking with the Godbolt compiler explorer and clang 10 we see that this
   // compiles to multiple jump instructions. It could be better to use
-  // conditional moves but I was unable to get the compiler to emit them. The
-  // assembly I would like is the the equivalent cast in Rust `pub fn f(f: f32)
+  // conditional moves but we were unable to get the compiler to emit them. The
+  // assembly we would like is the the equivalent cast in Rust `pub fn f(f: f32)
   // -> i32 { f as i32 }`.
   // One problem in making this happen that unlike the Rust assembly we cannot
   // unconditionally start with `To to = static_cast<To>(from)` and then
