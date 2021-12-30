@@ -87,8 +87,8 @@ constexpr To clamp_cast(const From from) noexcept {
   // conditionally overwrite if the limits are violated because the first
   // statement is already UB in C++.
   // For bounds that are powers of two we could use std::min, std::max to remove
-  // the branching but this doesn't work for signed upper bounds as they are a
-  // power of 2 minus 1 which is likely not exactly representable in From.
+  // the branching but this doesn't work for upper bounds as they are a power of
+  // 2 minus 1 which is likely not exactly representable in From.
 
   if (details::isnan(from)) {
     return 0;
