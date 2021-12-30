@@ -85,6 +85,7 @@ constexpr To clamp_cast(const From from) noexcept {
   // happen that unlike the Rust assembly we cannot unconditionally start with
   // `To to = static_cast<To>(from)` and the conditionally overwrite if the
   // limits are violated because the first statement is already UB in C++.
+  // TODO: Can we achieve this with std::bit_cast and manul float bit twiddling?
 
   if (details::isnan(from)) {
     return 0;
