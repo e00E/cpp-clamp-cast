@@ -13,10 +13,12 @@ template <typename T> constexpr bool isnan(T t) noexcept {
 
 // std::exp2 and std::pow aren't constexpr.according to cppreference so we
 // implement our own.
-template <typename T> constexpr T exp2(unsigned int exp) noexcept {
+template <typename T> constexpr T exp2(int exp) noexcept {
+  // Alternatively we could use std::bit_cast but explicit exponentation is
+  // clearer.
   static_assert(std::numeric_limits<T>::is_iec559);
   T result = 1.0;
-  for (unsigned int i = 0; i < exp; ++i) {
+  for (int i{0}; i < exp; ++i) {
     result *= 2.0;
   }
   return result;
@@ -79,13 +81,16 @@ constexpr To clamp_cast(const From from) noexcept {
 
   // Checking with the Godbolt compiler explorer and clang 10 we see that this
   // compiles to multiple jump instructions. It could be better to use
-  // conditional moves but I was not able to get the compiler to emit them. For
-  // an example how the assembly code would like compare it the equivalent cast
-  // in Rust `pub fn f(f: f32) -> i32 { f as i32 }`. One problem in making this
-  // happen that unlike the Rust assembly we cannot unconditionally start with
-  // `To to = static_cast<To>(from)` and the conditionally overwrite if the
-  // limits are violated because the first statement is already UB in C++.
-  // TODO: Can we achieve this with std::bit_cast and manul float bit twiddling?
+  // conditional moves but I was unable to get the compiler to emit them. The
+  // assembly I would like is the the equivalent cast in Rust `pub fn f(f: f32)
+  // -> i32 { f as i32 }`.
+  // One problem in making this happen that unlike the Rust assembly we cannot
+  // unconditionally start with `To to = static_cast<To>(from)` and then
+  // conditionally overwrite if the limits are violated because the first
+  // statement is already UB in C++.
+  // For bounds that are powers of two we could use std::min, std::max to remove
+  // the branching but this doesn't work for signed upper bounds as they are a
+  // power of 2 minus 1 which is likely not exactly representable in From.
 
   if (details::isnan(from)) {
     return 0;
