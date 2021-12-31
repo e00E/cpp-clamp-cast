@@ -14,7 +14,7 @@ void foo(float f) {
 }
 ```
 
-which does not even generate a warning.
+which does not generate a warning, not even with Wall and Wextra. Wconversion only warns for the implicit conversion but not the explicit ones.
 
 `clamp-cast.hpp` is a c++17 header that makes it easy to safely perform such conversions by clamping the value into the bounds of the target integer type.
 
@@ -28,7 +28,7 @@ void foo(float f) {
 
 ---
 
-It is a sad state of affairs that c++ makes it so easy to accidentally invoke UB without providing a usable alternative in the standard library. The only roughly equivalent standard library function is (std::lround)[https://en.cppreference.com/w/cpp/numeric/math/round] which has problems:
+It is a sad state of affairs that c++ makes it so easy to accidentally invoke UB without providing a usable alternative in the standard library. The only roughly equivalent standard library function is [std::lround](https://en.cppreference.com/w/cpp/numeric/math/round) which has problems:
 
 * It is not constexpr.
 * It does not get inlined.
