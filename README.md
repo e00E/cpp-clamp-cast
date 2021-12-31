@@ -1,7 +1,7 @@
 In c/c++ it is easy to accidentally invoke undefined behavior when converting a floating point number to an integer:
 
 https://en.cppreference.com/w/cpp/language/implicit_conversion section "Floating–integral conversions":
-> A prvalue of floating-point type can be converted to a prvalue of any integer type. The fractional part is truncated, that is, the fractional part is discarded. If the value cannot fit into the destination type, **the behavior is undefined** (even when the destination type is unsigned, modulo arithmetic does not apply).
+> A prvalue of floating-point type can be converted to a prvalue of any integer type. The fractional part is truncated, that is, the fractional part is discarded. **If the value cannot fit into the destination type, the behavior is undefined** (even when the destination type is unsigned, modulo arithmetic does not apply).
 
 
 This applies to innocuous looking code like
