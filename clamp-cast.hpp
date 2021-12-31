@@ -16,9 +16,9 @@ template <typename T> constexpr bool isnan(T t) noexcept {
 template <typename T> constexpr T exp2(int exp) noexcept {
   // Alternatively we could use std::bit_cast but explicit exponentation is
   // clearer.
-  T result = 1.0;
+  T result{1.0};
   for (int i{0}; i < exp; ++i) {
-    result *= 2.0;
+    result *= 2.0f;
   }
   return result;
 }

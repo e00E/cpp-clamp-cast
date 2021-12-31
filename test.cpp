@@ -21,7 +21,7 @@ bool test() {
   // works as constexpr
   static_assert(clamp_cast<uint8_t, float>(0.0) == 0);
 
-  bool success = true;
+  bool success{true};
 
   success &= test_case<uint8_t, float>(NAN, 0);
   success &= test_case<uint8_t, float>(0.0, 0);
