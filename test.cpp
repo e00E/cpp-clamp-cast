@@ -46,6 +46,21 @@ bool test() {
   success &= test_case<int8_t, float>(FLT_MAX, 127);
   success &= test_case<int8_t, float>(-FLT_MAX, -128);
 
+  const float bound{std::exp2f(63.0)};
+  // `- 1` because minimum int64_t cannot be written as integer literal
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52661 .
+  success &= test_case<int64_t, float>(std::nextafter(-bound, -INFINITY),
+                                       -9223372036854775807ll - 1);
+  success &= test_case<int64_t, float>(-bound, -9223372036854775807ll - 1);
+  success &= test_case<int64_t, float>(std::nextafter(-bound, INFINITY),
+                                       -9223371487098961920ll);
+
+  success &= test_case<int64_t, float>(std::nextafter(bound, -INFINITY),
+                                       9223371487098961920ll);
+  success &= test_case<int64_t, float>(bound, 9223372036854775807ll);
+  success &= test_case<int64_t, float>(std::nextafter(bound, INFINITY),
+                                       9223372036854775807ll);
+
   // We can't test the uncommon case mentioned in the comment in clamp_cast
   // because we would need a uint128_t which does not exist. Some compilers have
   // a __uint128_t but it does not implement std::numeric_limits.
