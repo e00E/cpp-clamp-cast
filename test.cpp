@@ -6,7 +6,7 @@
 #include "clamp-cast.hpp"
 
 template <typename To, typename From> bool test_case(From from, To expected) {
-  const auto result = clamp_cast<To, From>(from);
+  const auto result = clamp_cast::clamp_cast<To, From>(from);
   if (result != expected) {
     // there is a `+` in front of expected to prevent cout from treating uint8
     // as char and not printing it as a decimal number.
@@ -19,7 +19,7 @@ template <typename To, typename From> bool test_case(From from, To expected) {
 
 bool test() {
   // works as constexpr
-  static_assert(clamp_cast<uint8_t, float>(0.0) == 0);
+  static_assert(clamp_cast::clamp_cast<uint8_t, float>(0.0) == 0);
 
   bool success{true};
 

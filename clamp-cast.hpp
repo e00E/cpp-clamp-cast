@@ -3,16 +3,11 @@
 
 #include <limits>
 
-namespace clamp_cast_details {
+namespace clamp_cast {
 
-// std::isnan isn't constexpr according to cppreference so we implement our own.
-template <typename T> constexpr bool isnan(T t) noexcept {
-  // https://en.cppreference.com/w/cpp/numeric/math/isnan
-  return t != t;
-}
+namespace detail {
 
-// std::exp2 and std::pow aren't constexpr according to cppreference so we
-// implement our own.
+// constexpr std::exp2 equivalent
 template <typename T> constexpr T exp2(int exp) noexcept {
   // Alternatively we could use std::bit_cast but explicit exponentation is
   // clearer.
@@ -23,7 +18,55 @@ template <typename T> constexpr T exp2(int exp) noexcept {
   return result;
 }
 
-} // namespace clamp_cast_details
+template <typename T> constexpr int exponent_bits() noexcept {
+  using limits = std::numeric_limits<T>;
+  static_assert(limits::is_iec559);
+  static_assert(limits::radix == 2);
+  return limits::max_exponent - 1;
+}
+
+} // namespace detail
+
+// constexpr std::isnan equivalent
+template <typename T> constexpr bool is_nan(T t) noexcept {
+  static_assert(std::numeric_limits<T>::is_iec559);
+  // https://en.cppreference.com/w/cpp/numeric/math/isnan
+  return t != t;
+}
+
+// The lowest From value that will not underflow when converted to To.
+template <typename To, typename From>
+constexpr From lower_bound_inclusive() noexcept {
+  using to_limits = std::numeric_limits<To>;
+  static_assert(to_limits::is_integer);
+  static_assert(to_limits::radix == 2);
+
+  if constexpr (to_limits::is_signed) {
+    constexpr auto to_bits = to_limits::digits;
+    if constexpr (detail::exponent_bits<From>() >= to_bits) {
+      return -detail::exp2<From>(to_bits);
+    } else {
+      return std::numeric_limits<From>::lowest;
+    }
+  } else {
+    return 0.0;
+  }
+}
+
+// The lowest From value that will overflow when converted to To.
+template <typename To, typename From>
+constexpr From upper_bound_exclusive() noexcept {
+  using to_limits = std::numeric_limits<To>;
+  static_assert(to_limits::is_integer);
+  static_assert(to_limits::radix == 2);
+  constexpr auto to_bits = to_limits::digits;
+
+  if constexpr (detail::exponent_bits<From>() >= to_bits) {
+    return detail::exp2<From>(to_bits);
+  } else {
+    return std::numeric_limits<From>::infinity;
+  }
+}
 
 // Safe cast from a floating point type to an integer type by clamping to its
 // bounds if the value would be outside.
@@ -35,17 +78,6 @@ template <typename T> constexpr T exp2(int exp) noexcept {
 // section "Floating–integral conversions"
 template <typename To, typename From>
 constexpr To clamp_cast(const From from) noexcept {
-  using from_limits = std::numeric_limits<From>;
-  using to_limits = std::numeric_limits<To>;
-
-  static_assert(from_limits::is_iec559);
-  static_assert(to_limits::is_integer);
-  static_assert(from_limits::radix == 2);
-  static_assert(to_limits::radix == 2);
-
-  constexpr auto to_bits = to_limits::digits;
-  constexpr auto exponent_bits = from_limits::max_exponent - 1;
-
   // Floating point numbers can represent a large range of powers of 2 exactly.
   // For example, even a 32 bit float can represent 2**64. In this common case
   // we can represent the minimum and maximum values of To exactly in From.
@@ -54,28 +86,6 @@ constexpr To clamp_cast(const From from) noexcept {
   // In the uncommon case that a bound is larger than what From can exactly
   // represent we know that To can store all finite values of From because it
   // is at least one power of 2 larger.
-
-  constexpr From lower_bound_inclusive = [&]() constexpr {
-    if constexpr (to_limits::is_signed) {
-      if constexpr (exponent_bits >= to_bits) {
-        return -clamp_cast_details::exp2<From>(to_bits);
-      } else {
-        return from_limits::lowest;
-      }
-    } else {
-      return 0.0;
-    }
-  }
-  ();
-
-  constexpr From upper_bound_exclusive = [&]() constexpr {
-    if constexpr (exponent_bits >= to_bits) {
-      return clamp_cast_details::exp2<From>(to_bits);
-    } else {
-      return from_limits::infinity;
-    }
-  }
-  ();
 
   // Checking with the Godbolt compiler explorer and clang 10 we see that this
   // compiles to multiple jump instructions. It could be better to use
@@ -90,16 +100,17 @@ constexpr To clamp_cast(const From from) noexcept {
   // the branching but this doesn't work for upper bounds as they are a power of
   // 2 minus 1 which is likely not exactly representable in From.
 
-  if (clamp_cast_details::isnan(from)) {
+  if (is_nan(from)) {
     return 0;
-  } else if (from < lower_bound_inclusive) {
-    return to_limits::min();
-  } else if (from >= upper_bound_exclusive) {
-    return to_limits::max();
+  } else if (from < lower_bound_inclusive<To, From>()) {
+    return std::numeric_limits<To>::min();
+  } else if (from >= upper_bound_exclusive<To, From>()) {
+    return std::numeric_limits<To>::max();
   } else {
-    // We know that the value is not out of bounds for To. This cast is safe.
     return static_cast<To>(from);
   }
 }
+
+} // namespace clamp_cast
 
 #endif
