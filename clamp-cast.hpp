@@ -1,8 +1,9 @@
-#pragma once
+#ifndef CLAMP_CAST_HPP
+#define CLAMP_CAST_HPP
 
 #include <limits>
 
-namespace details {
+namespace clamp_cast_details {
 
 // std::isnan isn't constexpr according to cppreference so we implement our own.
 template <typename T> constexpr bool isnan(T t) noexcept {
@@ -10,7 +11,7 @@ template <typename T> constexpr bool isnan(T t) noexcept {
   return t != t;
 }
 
-// std::exp2 and std::pow aren't constexpr.according to cppreference so we
+// std::exp2 and std::pow aren't constexpr according to cppreference so we
 // implement our own.
 template <typename T> constexpr T exp2(int exp) noexcept {
   // Alternatively we could use std::bit_cast but explicit exponentation is
@@ -22,7 +23,7 @@ template <typename T> constexpr T exp2(int exp) noexcept {
   return result;
 }
 
-} // namespace details
+} // namespace clamp_cast_details
 
 // Safe cast from a floating point type to an integer type by clamping to its
 // bounds if the value would be outside.
@@ -57,7 +58,7 @@ constexpr To clamp_cast(const From from) noexcept {
   constexpr From lower_bound_inclusive = [&]() constexpr {
     if constexpr (to_limits::is_signed) {
       if constexpr (exponent_bits >= to_bits) {
-        return -details::exp2<From>(to_bits);
+        return -clamp_cast_details::exp2<From>(to_bits);
       } else {
         return from_limits::lowest;
       }
@@ -69,7 +70,7 @@ constexpr To clamp_cast(const From from) noexcept {
 
   constexpr From upper_bound_exclusive = [&]() constexpr {
     if constexpr (exponent_bits >= to_bits) {
-      return details::exp2<From>(to_bits);
+      return clamp_cast_details::exp2<From>(to_bits);
     } else {
       return from_limits::infinity;
     }
@@ -89,7 +90,7 @@ constexpr To clamp_cast(const From from) noexcept {
   // the branching but this doesn't work for upper bounds as they are a power of
   // 2 minus 1 which is likely not exactly representable in From.
 
-  if (details::isnan(from)) {
+  if (clamp_cast_details::isnan(from)) {
     return 0;
   } else if (from < lower_bound_inclusive) {
     return to_limits::min();
@@ -100,3 +101,5 @@ constexpr To clamp_cast(const From from) noexcept {
     return static_cast<To>(from);
   }
 }
+
+#endif
