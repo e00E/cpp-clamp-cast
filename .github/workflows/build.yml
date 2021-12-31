@@ -1,0 +1,28 @@
+name: Build and test
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - master
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        cxx: [clang++, g++]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          sudo rm  /usr/bin/c++
+          sudo ln -s /usr/bin/${{ matrix.cxx }} /usr/bin/c++
+      - run: ./compile-and-test.sh
