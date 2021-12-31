@@ -8,9 +8,9 @@ This applies to innocuous looking code like
 
 ```c++
 void foo(float f) {
-    int i = f;
-    int i = int(f);
-    int i = static_cast<int>(f);
+    int i0 = f;
+    int i1 = int(f);
+    int i2 = static_cast<int>(f);
 }
 ```
 
